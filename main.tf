@@ -18,6 +18,13 @@ resource "aws_subnet" "Mysubnet01" {
   tags = {
     "Name" = "MyPublicSubnet01"
   }
+  terraform {
+    backend "s3" {
+      bucket = "tf-timoec2"
+      region = "us-east-1"
+    }
+  }
+  
 }
 resource "aws_subnet" "Mysubnet02" {
   vpc_id                  = aws_vpc.myvpc.id
