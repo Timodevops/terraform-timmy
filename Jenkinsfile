@@ -22,7 +22,7 @@ pipeline {
                     withAWS(credentials: "${AWS_CREDENTIALS_ID}") {
                         sh """
                         terraform init \
-                            -backend-config="bucket=${S3_BUCKET}" \
+                            // -backend-config="bucket=${S3_BUCKET}" \
                             // -backend-config="dynamodb_table=${DYNAMODB_TABLE}" \
                             -backend-config="region=us-east-1" \
                             -backend-config="key=terraform/${TF_WORKSPACE}/terraform.tfstate"
