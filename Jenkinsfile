@@ -6,7 +6,7 @@ pipeline {
         // TERRAFORM_VERSION = '1.1.0' // Specify your required Terraform version
         S3_BUCKET = 'tf-timoec2' // Replace with your S3 bucket for Terraform state
         // DYNAMODB_TABLE = 'your-terraform-lock-table' // Replace with your DynamoDB table for state locking
-        TF_WORKSPACE = 'default'
+        TF_WORKSPACE = 'development'
     }
 
     stages {
