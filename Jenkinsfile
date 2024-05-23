@@ -51,7 +51,7 @@ pipeline {
                 input message: 'Approve Terraform Apply?', ok: 'Apply'
                 script {
                     withAWS(credentials: "${AWS_CREDENTIALS_ID}") {
-                        sh 'terraform apply tfplan'
+                        sh 'terraform apply -out=tfplan'
                     }
                 }
             }
