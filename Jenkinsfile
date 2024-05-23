@@ -47,10 +47,11 @@ pipeline {
         }
 
         stage('Terraform Apply') {
-            steps {            
+            steps {
+                    // input message: 'Approve Terraform Apply?', ok: 'Apply'            
                 script {
                     withAWS(credentials: "${AWS_CREDENTIALS_ID}") {
-                        sh 'terraform apply tfplan  -auto-approve'
+                        sh 'terraform apply --auto-approve'
                     }
                 }
             }
