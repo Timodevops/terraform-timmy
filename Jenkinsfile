@@ -56,6 +56,16 @@ pipeline {
                 }
             }
         }
+        stage('Terraform Destroy') {
+            steps {
+                    // input message: 'Approve Terraform Apply?', ok: 'Apply'            
+                script {
+                    withAWS(credentials: "${AWS_CREDENTIALS_ID}") {
+                        sh 'terraform destroy --auto-approve'
+                    }
+                }
+            }
+        }
     }
 
     post {
