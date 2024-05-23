@@ -3,18 +3,18 @@ pipeline {
 
     environment {
         AWS_CREDENTIALS_ID = 'aws-credentials-id' // Replace with your Jenkins AWS credentials ID
-        TERRAFORM_VERSION = '1.8.3' // Specify your required Terraform version
-        S3_BUCKET = 'tf-timoec2' // Replace with your S3 bucket for Terraform state
+        // TERRAFORM_VERSION = '1.1.0' // Specify your required Terraform version
+        S3_BUCKET = 'labexercise1' // Replace with your S3 bucket for Terraform state
         // DYNAMODB_TABLE = 'your-terraform-lock-table' // Replace with your DynamoDB table for state locking
-        // TF_WORKSPACE = 'default'
+        TF_WORKSPACE = 'default'
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/Timodevops/terraform-timmy.git'
-            }
-        }
+        // stage('Checkout') {
+        //     steps {
+        //         git branch: 'main', url: 'https://your-git-repo-url.git'
+        //     }
+        // }
 
         stage('Terraform Init') {
             steps {
@@ -23,9 +23,7 @@ pipeline {
                         sh """
                         terraform init \
                             -backend-config="bucket=${S3_BUCKET}" \
-                            // -backend-config="dynamodb_table=${DYNAMODB_TABLE}" \
-                            -backend-config="region=us-east-1" \
-                            // -backend-config="key=terraform/${TF_WORKSPACE}/terraform.tfstate"
+                            -backend-config="key=terraform/${TF_WORKSPACE}/terraform.tfstate"
                         """
                     }
                 }

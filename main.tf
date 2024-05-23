@@ -1,7 +1,16 @@
 #Adding Provider details
 provider "aws" {
   region = "us-east-1"
+
 }
+terraform {
+  backend "s3" {
+    bucket = "labexercise1"
+    region = "us-east-1"
+    
+  }
+}
+
 #Create a custom VPC
 resource "aws_vpc" "myvpc" {
   cidr_block = "10.0.0.0/16"
@@ -9,6 +18,7 @@ resource "aws_vpc" "myvpc" {
     "Name" = "MyProjectVPC"
   }
 }
+
 #Create Subnets
 resource "aws_subnet" "Mysubnet01" {
   vpc_id                  = aws_vpc.myvpc.id
@@ -18,14 +28,8 @@ resource "aws_subnet" "Mysubnet01" {
   tags = {
     "Name" = "MyPublicSubnet01"
   }
-  terraform {
-    backend "s3" {
-      bucket = "tf-timoec2"
-      region = "us-east-1"
-    }
-  }
-  
 }
+
 resource "aws_subnet" "Mysubnet02" {
   vpc_id                  = aws_vpc.myvpc.id
   cidr_block              = "10.0.2.0/24"
@@ -35,6 +39,7 @@ resource "aws_subnet" "Mysubnet02" {
     "Name" = "MyPublicSubnet02"
   }
 }
+
 # Creating Internet Gateway IGW
 resource "aws_internet_gateway" "myigw" {
   vpc_id = aws_vpc.myvpc.id
@@ -42,6 +47,7 @@ resource "aws_internet_gateway" "myigw" {
     "Name" = "MyIGW"
   }
 }
+
 # Creating Route Table
 resource "aws_route_table" "myroutetable" {
   vpc_id = aws_vpc.myvpc.id
@@ -49,26 +55,32 @@ resource "aws_route_table" "myroutetable" {
     "Name" = "MyPublicRouteTable"
   }
 }
+
 # Create a Route in the Route Table with a route to IGW
 resource "aws_route" "myigw_route" {
   route_table_id         = aws_route_table.myroutetable.id
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.myigw.id
 }
+
 # Associate Subnets with the Route Table
 resource "aws_route_table_association" "Mysubnet01_association" {
   route_table_id = aws_route_table.myroutetable.id
   subnet_id      = aws_subnet.Mysubnet01.id
 }
+
 resource "aws_route_table_association" "Mysubnet02_association" {
   route_table_id = aws_route_table.myroutetable.id
   subnet_id      = aws_subnet.Mysubnet02.id
 }
+
+
 #Adding security group
 resource "aws_security_group" "allow_tls" {
   name_prefix = "allow_tls_"
   description = "Allow TLS inbound traffic"
   vpc_id      = aws_vpc.myvpc.id
+
   ingress {
     description = "TLS from VPC"
     from_port   = 22
@@ -76,6 +88,7 @@ resource "aws_security_group" "allow_tls" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -83,9 +96,11 @@ resource "aws_security_group" "allow_tls" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
 #Creating IAM role for EKS
 resource "aws_iam_role" "master" {
   name = "ed-eks-master"
+
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
@@ -99,20 +114,25 @@ resource "aws_iam_role" "master" {
     ]
   })
 }
+
 resource "aws_iam_role_policy_attachment" "AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.master.name
 }
+
 resource "aws_iam_role_policy_attachment" "AmazonEKSServicePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSServicePolicy"
   role       = aws_iam_role.master.name
 }
+
 resource "aws_iam_role_policy_attachment" "AmazonEKSVPCResourceController" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
   role       = aws_iam_role.master.name
 }
+
 resource "aws_iam_role" "worker" {
   name = "ed-eks-worker"
+
   assume_role_policy = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
@@ -126,6 +146,7 @@ resource "aws_iam_role" "worker" {
     ]
   })
 }
+
 resource "aws_iam_policy" "autoscaler" {
   name = "ed-eks-autoscaler-policy"
   policy = jsonencode({
@@ -147,59 +168,77 @@ resource "aws_iam_policy" "autoscaler" {
     ]
   })
 }
+
 resource "aws_iam_role_policy_attachment" "AmazonEKSWorkerNodePolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
   role       = aws_iam_role.worker.name
 }
+
 resource "aws_iam_role_policy_attachment" "AmazonEKS_CNI_Policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
   role       = aws_iam_role.worker.name
 }
+
 resource "aws_iam_role_policy_attachment" "AmazonSSMManagedInstanceCore" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   role       = aws_iam_role.worker.name
 }
+
 resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
   role       = aws_iam_role.worker.name
 }
+
 resource "aws_iam_role_policy_attachment" "x-ray" {
   policy_arn = "arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess"
   role       = aws_iam_role.worker.name
 }
+
 resource "aws_iam_role_policy_attachment" "s3" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
   role       = aws_iam_role.worker.name
 }
+
 resource "aws_iam_role_policy_attachment" "autoscaler" {
   policy_arn = aws_iam_policy.autoscaler.arn
   role       = aws_iam_role.worker.name
 }
+
 resource "aws_iam_instance_profile" "worker" {
   depends_on = [aws_iam_role.worker]
   name       = "ed-eks-worker-new-profile"
   role       = aws_iam_role.worker.name
 }
+
+
+
 #Creating EKS Cluster
 resource "aws_eks_cluster" "eks" {
   name     = "pc-eks"
   role_arn = aws_iam_role.master.arn
+
   vpc_config {
     subnet_ids = [aws_subnet.Mysubnet01.id, aws_subnet.Mysubnet02.id]
   }
+
   tags = {
     "Name" = "MyEKS"
   }
+
   depends_on = [
     aws_iam_role_policy_attachment.AmazonEKSClusterPolicy,
     aws_iam_role_policy_attachment.AmazonEKSServicePolicy,
     aws_iam_role_policy_attachment.AmazonEKSVPCResourceController,
   ]
 }
+
+
 resource "aws_key_pair" "lab_test" {
   key_name   = "lab_test"
   public_key = file("~/.ssh/id_rsa.pub")
 }
+
+
 resource "aws_instance" "kubectl-server" {
   ami                         = "ami-0fe630eb857a6ec83" # Replace with a valid AMI ID for ap-south-1 region
   key_name                    = aws_key_pair.lab_test.key_name            # Make sure the key pair exists in ap-south-1 region
@@ -207,10 +246,12 @@ resource "aws_instance" "kubectl-server" {
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.Mysubnet01.id
   vpc_security_group_ids      = [aws_security_group.allow_tls.id]
+
   tags = {
     Name = "kubectl"
   }
 }
+
 resource "aws_eks_node_group" "node-grp" {
   cluster_name    = aws_eks_cluster.eks.name
   node_group_name = "pc-node-group"
@@ -219,21 +260,26 @@ resource "aws_eks_node_group" "node-grp" {
   capacity_type   = "ON_DEMAND"
   disk_size       = 20
   instance_types  = ["t2.small"]
+
   remote_access {
     ec2_ssh_key               = aws_key_pair.lab_test.key_name 
     source_security_group_ids = [aws_security_group.allow_tls.id]
   }
+
   labels = {
     env = "dev"
   }
+
   scaling_config {
     desired_size = 4
     max_size     = 4
     min_size     = 4
   }
+
   update_config {
     max_unavailable = 1
   }
+
   depends_on = [
     aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
