@@ -9,12 +9,12 @@ pipeline {
         // TF_WORKSPACE = 'default'
     }
 
-    // stages {
-    //     stage('Checkout') {
-    //         steps {
-    //             git branch: 'main', url: 'https://github.com/Timodevops/terraform-timmy.git'
-    //         }
-    //     }
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Timodevops/terraform-timmy.git'
+            }
+        }
 
         stage('Terraform Init') {
             steps {
