@@ -1,76 +1,44 @@
 pipeline {
     agent any
-
     environment {
-        AWS_CREDENTIALS_ID = 'aws-credentials-id' // Replace with your Jenkins AWS credentials ID
-        // TERRAFORM_VERSION = '1.1.0' // Specify your required Terraform version
-        S3_BUCKET = 'tf-timoec2' // Replace with your S3 bucket for Terraform state
-        // DYNAMODB_TABLE = 'your-terraform-lock-table' // Replace with your DynamoDB table for state locking good
-        TF_WORKSPACE = 'development'
+        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
     }
-
     stages {
-        // stage('Checkout') {
-        //     steps {
-        //         git branch: 'main', url: 'https://your-git-repo-url.git'
-        //     }
-        // }
-
-        stage('Terraform Init') {
+        stage('Checkout') {
             steps {
-                script {
-                    withAWS(credentials: "${AWS_CREDENTIALS_ID}") {
-                        sh """
-                        terraform init \
-                            -backend-config="bucket=${S3_BUCKET}" \
-                            -backend-config="key=terraform/${TF_WORKSPACE}/terraform.tfstate"
-                        """
-                    }
-                }
+                git branch: 'main', url: 'https://github.com/Timodevops/Tim_assign_jenkins.git'
             }
         }
 
-        stage('Terraform Validate') {
+        stage('Terraform Init') {
             steps {
-                sh 'terraform validate'
+                sh 'terraform init'
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                script {
-                    withAWS(credentials: "${AWS_CREDENTIALS_ID}") {
-                        sh 'terraform plan -out=tfplan'
-                    }
-                }
+                sh 'terraform plan -out=tfplan'
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                    // input message: 'Approve Terraform Apply?', ok: 'Apply'            
-                script {
-                    withAWS(credentials: "${AWS_CREDENTIALS_ID}") {
-                        sh 'terraform apply --auto-approve'
-                    }
-                }
+                sh 'terraform apply -auto-approve tfplan'
             }
         }
+    
         stage('Terraform Destroy') {
             steps {
-                    // input message: 'Approve Terraform Apply?', ok: 'Apply'            
-                script {
-                    withAWS(credentials: "${AWS_CREDENTIALS_ID}") {
-                        sh 'terraform destroy --auto-approve'
-                    }
-                }
+                sh 'terraform destroy -auto-approve tfplan'
             }
         }
     }
-
     post {
         always {
             cleanWs()
         }
     }
+
 }
